@@ -1,3 +1,9 @@
+# Check and elevate to administrator
+if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
+    Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
+    exit
+}
+
 # Automatically install Chocolatey
 if (-Not (Get-Command choco -ErrorAction SilentlyContinue)) {
     Write-Host "Automatically installing Chocolatey..."
@@ -60,25 +66,6 @@ foreach ($category in $appCategories.Keys) {
     Add-AppsToCategory -panel $groupBox -apps $appCategories[$category]
     $applicationTab.Controls.Add($groupBox)
 }
-
-# Background music setup
-$soundPlayer = New-Object System.Media.SoundPlayer
-$soundPlayer.SoundLocation = "C:\path_to_music\music.wav"
-$soundPlayer.PlayLooping()
-
-# Volume and Mute Controls
-$muteButton = New-Object System.Windows.Forms.Button
-$muteButton.Text = "Mute/Unmute"
-$muteButton.Location = New-Object System.Drawing.Point(650, 550)
-$muteButton.Size = New-Object System.Drawing.Size(100, 30)
-$muteButton.Add_Click({ 
-    if ($soundPlayer.IsLoadCompleted) {
-        $soundPlayer.Stop()
-    } else {
-        $soundPlayer.Play()
-    }
-})
-$form.Controls.Add($muteButton)
 
 $form.Controls.Add($tabControl)
 $form.Add_Shown({$form.Activate()})
