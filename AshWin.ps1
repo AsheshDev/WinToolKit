@@ -1,19 +1,13 @@
-# Check if running as Administrator
-if (-NOT ([Security.Principal.WindowsPrincipal][Security.Principal.WindowsIdentity]::GetCurrent()).IsInRole([Security.Principal.WindowsBuiltInRole] "Administrator")) {
-    Write-Host "Restarting the script with Administrator rights..."
-    Start-Process powershell.exe -ArgumentList "-NoProfile -ExecutionPolicy Bypass -File `"$PSCommandPath`"" -Verb RunAs
-    exit
-}
-
-# Check and install Chocolatey if it's not installed
+# Automatically install Chocolatey
 if (-Not (Get-Command choco -ErrorAction SilentlyContinue)) {
-    Write-Host "Chocolatey is not installed. Installing Chocolatey..."
+    Write-Host "Automatically installing Chocolatey..."
     Set-ExecutionPolicy Bypass -Scope Process -Force
     Invoke-Expression ((New-Object System.Net.WebClient).DownloadString('https://chocolatey.org/install.ps1'))
 }
 
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
+Add-Type -AssemblyName PresentationCore
 
 $form = New-Object System.Windows.Forms.Form
 $form.Text = 'Ashesh Development Toolkit for Windows'
@@ -26,49 +20,65 @@ $tabControl = New-Object System.Windows.Forms.TabControl
 $tabControl.Dock = 'Fill'
 $tabControl.Font = New-Object System.Drawing.Font('Dotum', 10)
 
-$generalTab = New-Object System.Windows.Forms.TabPage
-$generalTab.Text = 'General Applications'
-$generalTab.UseVisualStyleBackColor = $True
+$applicationTab = New-Object System.Windows.Forms.TabPage
+$applicationTab.Text = 'Applications'
+$applicationTab.UseVisualStyleBackColor = $True
+$tabControl.TabPages.Add($applicationTab)
 
-$devTab = New-Object System.Windows.Forms.TabPage
-$devTab.Text = 'Dev Applications'
-$devTab.UseVisualStyleBackColor = $True
+# Define applications by category
+$appCategories = @{
+    'Browsers' = @('firefox', 'googlechrome', 'edge', 'opera gx', 'chromium', 'vivaldi', 'falkon')
+    'Communications' = @('discord', 'guilded', 'telegram')
+    'File Compression' = @('winrar', '7zip', 'winzip', 'bulk_crap_uninstaller')
+    'DevTools' = @('git', 'docker', 'nodejs')
+}
 
-$gameTab = New-Object System.Windows.Forms.TabPage
-$gameTab.Text = 'Gaming'
-$gameTab.UseVisualStyleBackColor = $True
-
-$tabControl.TabPages.AddRange(@($generalTab, $devTab, $gameTab))
-
-# Define applications for each category
-$generalApps = 'googlechrome', 'firefox', 'vlc', '7zip', 'spotify'
-$devApps = 'vscode', 'git', 'docker', 'nodejs', 'python', 'postgresql'
-$gameApps = 'steam', 'epicgameslauncher', 'origin', 'gog', 'battle.net'
-
-# Helper function to add apps to tabs
-function Add-AppsToTab($tab, $apps) {
-    $y = 20
+# Function to add checkboxes
+function Add-AppsToCategory($panel, $apps) {
+    $y = 10
     foreach ($app in $apps) {
-        $appButton = New-Object System.Windows.Forms.Button
-        $appButton.Text = "Install $app"
-        $appButton.Location = New-Object System.Drawing.Point(10, $y)
-        $appButton.Size = New-Object System.Drawing.Size(200, 30)
-        $appButton.Font = New-Object System.Drawing.Font('Dotum', 8)
-        $appButton.BackColor = [System.Drawing.Color]::FromArgb(28, 151, 234)
-        $appButton.ForeColor = [System.Drawing.Color]::WhiteSmoke
-        $appButton.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
-        $appButton.Add_Click({
-            Start-Process "powershell.exe" -ArgumentList "choco install $app -y" -Verb RunAs
-        })
-        $tab.Controls.Add($appButton)
-        $y += 40
+        $checkBox = New-Object System.Windows.Forms.CheckBox
+        $checkBox.Text = $app
+        $checkBox.Location = New-Object System.Drawing.Point(10, $y)
+        $checkBox.Size = New-Object System.Drawing.Size(200, 24)
+        $checkBox.Font = New-Object System.Drawing.Font('Dotum', 8)
+        $checkBox.ForeColor = [System.Drawing.Color]::WhiteSmoke
+        $panel.Controls.Add($checkBox)
+        $y += 30
     }
 }
 
-# Add applications to tabs
-Add-AppsToTab -tab $generalTab -apps $generalApps
-Add-AppsToTab -tab $devTab -apps $devApps
-Add-AppsToTab -tab $gameTab -apps $gameApps
+# Add categorized apps to the tab
+foreach ($category in $appCategories.Keys) {
+    $groupBox = New-Object System.Windows.Forms.GroupBox
+    $groupBox.Text = $category
+    $groupBox.Font = New-Object System.Drawing.Font('Dotum', 10, [System.Drawing.FontStyle]::Bold)
+    $groupBox.ForeColor = [System.Drawing.Color]::Cyan
+    $groupBox.Location = New-Object System.Drawing.Point(10, 10)
+    $groupBox.Size = New-Object System.Drawing.Size(760, 120)
+    $groupBox.Padding = New-Object System.Windows.Forms.Padding(10)
+    Add-AppsToCategory -panel $groupBox -apps $appCategories[$category]
+    $applicationTab.Controls.Add($groupBox)
+}
+
+# Background music setup
+$soundPlayer = New-Object System.Media.SoundPlayer
+$soundPlayer.SoundLocation = "C:\path_to_music\music.wav"
+$soundPlayer.PlayLooping()
+
+# Volume and Mute Controls
+$muteButton = New-Object System.Windows.Forms.Button
+$muteButton.Text = "Mute/Unmute"
+$muteButton.Location = New-Object System.Drawing.Point(650, 550)
+$muteButton.Size = New-Object System.Drawing.Size(100, 30)
+$muteButton.Add_Click({ 
+    if ($soundPlayer.IsLoadCompleted) {
+        $soundPlayer.Stop()
+    } else {
+        $soundPlayer.Play()
+    }
+})
+$form.Controls.Add($muteButton)
 
 $form.Controls.Add($tabControl)
 $form.Add_Shown({$form.Activate()})
