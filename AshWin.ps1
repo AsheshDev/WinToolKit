@@ -19,19 +19,16 @@ $form = New-Object System.Windows.Forms.Form
 $form.Text = 'Ashesh Development Toolkit for Windows'
 $form.Size = New-Object System.Drawing.Size(800, 600)
 $form.StartPosition = 'CenterScreen'
-$form.BackColor = [System.Drawing.Color]::FromArgb(45, 45, 48)
-$form.ForeColor = [System.Drawing.Color]::WhiteSmoke
 
 $tabControl = New-Object System.Windows.Forms.TabControl
 $tabControl.Dock = 'Fill'
-$tabControl.Font = New-Object System.Drawing.Font('Dotum', 10)
 
 $generalTab = New-Object System.Windows.Forms.TabPage
 $generalTab.Text = 'General Applications'
 $generalTab.UseVisualStyleBackColor = $True
 
 $devTab = New-Object System.Windows.Forms.TabPage
-$devTab.Text = 'Dev Applications'
+$devTab.Text = 'Developer Applications'
 $devTab.UseVisualStyleBackColor = $True
 
 $gameTab = New-Object System.Windows.Forms.TabPage
@@ -41,9 +38,9 @@ $gameTab.UseVisualStyleBackColor = $True
 $tabControl.TabPages.AddRange(@($generalTab, $devTab, $gameTab))
 
 # Define applications for each category
-$generalApps = 'googlechrome', 'firefox', 'vlc', '7zip', 'spotify'
-$devApps = 'vscode', 'git', 'docker', 'nodejs', 'python', 'postgresql'
-$gameApps = 'steam', 'epicgameslauncher', 'origin', 'gog', 'battle.net'
+$generalApps = 'googlechrome', 'firefox', 'vlc'
+$devApps = 'vscode', 'git', 'docker'
+$gameApps = 'steam', 'epicgameslauncher', 'origin'
 
 # Helper function to add apps to tabs
 function Add-AppsToTab($tab, $apps) {
@@ -53,10 +50,6 @@ function Add-AppsToTab($tab, $apps) {
         $appButton.Text = "Install $app"
         $appButton.Location = New-Object System.Drawing.Point(10, $y)
         $appButton.Size = New-Object System.Drawing.Size(200, 30)
-        $appButton.Font = New-Object System.Drawing.Font('Dotum', 8)
-        $appButton.BackColor = [System.Drawing.Color]::FromArgb(28, 151, 234)
-        $appButton.ForeColor = [System.Drawing.Color]::WhiteSmoke
-        $appButton.FlatStyle = [System.Windows.Forms.FlatStyle]::Flat
         $appButton.Add_Click({
             Start-Process "powershell.exe" -ArgumentList "choco install $app -y" -Verb RunAs
         })
