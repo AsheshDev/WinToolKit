@@ -13,40 +13,32 @@ $tabControl.Dock = 'Fill'
 $tabControl.BackColor = $form.BackColor
 $tabControl.ForeColor = $form.ForeColor
 
-$generalTab = New-Object System.Windows.Forms.TabPage
-$generalTab.Text = 'General Applications'
-$generalTab.BackColor = $form.BackColor
-$generalTab.ForeColor = $form.ForeColor
-$generalTab.AutoScroll = $True
+function CreateTabPage($text) {
+    $page = New-Object System.Windows.Forms.TabPage
+    $page.Text = $text
+    $page.BackColor = $form.BackColor
+    $page.ForeColor = $form.ForeColor
+    $page.AutoScroll = $True
+    return $page
+}
 
-$devTab = New-Object System.Windows.Forms.TabPage
-$devTab.Text = 'Dev Applications'
-$devTab.BackColor = $form.BackColor
-$devTab.ForeColor = $form.ForeColor
-$devTab.AutoScroll = $True
-
-$tweaksTab = New-Object System.Windows.Forms.TabPage
-$tweaksTab.Text = 'Tweaks'
-$tweaksTab.BackColor = $form.BackColor
-$tweaksTab.ForeColor = $form.ForeColor
-
-$settingsInfoTab = New-Object System.Windows.Forms.TabPage
-$settingsInfoTab.Text = 'Settings and Info'
-$settingsInfoTab.BackColor = $form.BackColor
-$settingsInfoTab.ForeColor = $form.ForeColor
+$generalTab = CreateTabPage 'General Applications'
+$devTab = CreateTabPage 'Dev Applications'
+$tweaksTab = CreateTabPage 'Tweaks'
+$settingsInfoTab = CreateTabPage 'Settings and Info'
 
 $tabControl.TabPages.AddRange(@($generalTab, $devTab, $tweaksTab, $settingsInfoTab))
 
 function CreateInstallLocationTextBox {
-    $installLocationTextBox = New-Object System.Windows.Forms.TextBox
-    $installLocationTextBox.Top = 30
-    $installLocationTextBox.Left = 10
-    $installLocationTextBox.Width = 560
-    $installLocationTextBox.Height = 20
-    $installLocationTextBox.Text = "C:\Program Files"
-    $installLocationTextBox.ForeColor = [System.Drawing.Color]::Black
-    $installLocationTextBox.BackColor = [System.Drawing.Color]::White
-    return $installLocationTextBox
+    $textBox = New-Object System.Windows.Forms.TextBox
+    $textBox.Top = 30
+    $textBox.Left = 10
+    $textBox.Width = 560
+    $textBox.Height = 20
+    $textBox.Text = "C:\Program Files"
+    $textBox.ForeColor = [System.Drawing.Color]::Black
+    $textBox.BackColor = [System.Drawing.Color]::White
+    return $textBox
 }
 
 $generalInstallLocationTextBox = CreateInstallLocationTextBox
@@ -57,7 +49,12 @@ $devTab.Controls.Add($devInstallLocationTextBox)
 
 function Install-ChocoPackage {
     param([string]$packageName, [string]$installPath)
-    Start-Process -FilePath "powershell.exe" -ArgumentList "choco install $packageName -y --params `"/InstallDir:$installPath`"" -Verb RunAs
+    try {
+        $arguments = "choco install $packageName -y --params `"/InstallDir:$installPath`""
+        Start-Process -FilePath "powershell.exe" -ArgumentList $arguments -Verb RunAs -NoNewWindow
+    } catch {
+        [System.Windows.Forms.MessageBox]::Show("Failed to install $packageName`nError: $($_.Exception.Message)", "Installation Error", [System.Windows.Forms.MessageBoxButtons]::OK, [System.Windows.Forms.MessageBoxIcon]::Error)
+    }
 }
 
 function Add-AppControl {
@@ -86,19 +83,16 @@ function Add-AppControl {
     $tab.Controls.Add($installButton)
 }
 
-$y = 60
-$generalApps = @('GoogleChrome', 'MozillaFirefox', 'Vivaldi', 'NotepadPlusPlus', 'JDownloader', 'WinRAR', 'Discord')
-foreach ($app in $generalApps) {
-    Add-AppControl -tab $generalTab -appName $app -y $y -installLocationTextBox $generalInstallLocationTextBox
-    $y += 30
+function PopulateTabWithApps($tab, $apps, $installLocationTextBox) {
+    $y = 60
+    foreach ($app in $apps) {
+        Add-AppControl -tab $tab -appName $app -y $y -installLocationTextBox $installLocationTextBox
+        $y += 30
+    }
 }
 
-$y = 60
-$devApps = @('Git', 'VisualStudioCode', 'Atom', 'SublimeText', 'Postman', 'Docker')
-foreach ($app in $devApps) {
-    Add-AppControl -tab $devTab -appName $app -y $y -installLocationTextBox $devInstallLocationTextBox
-    $y += 30
-}
+PopulateTabWithApps $generalTab @('GoogleChrome', 'MozillaFirefox', 'Vivaldi', 'NotepadPlusPlus', 'JDownloader', 'WinRAR', 'Discord') $generalInstallLocationTextBox
+PopulateTabWithApps $devTab @('Git', 'VisualStudioCode', 'Atom', 'SublimeText', 'Postman', 'Docker') $devInstallLocationTextBox
 
 $form.Controls.Add($tabControl)
 $form.ShowDialog()
