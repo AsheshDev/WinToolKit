@@ -25,36 +25,43 @@ $devTab.BackColor = $form.BackColor
 $devTab.ForeColor = $form.ForeColor
 $devTab.AutoScroll = $True
 
+$tweaksTab = New-Object System.Windows.Forms.TabPage
+$tweaksTab.Text = 'Tweaks'
+$tweaksTab.BackColor = $form.BackColor
+$tweaksTab.ForeColor = $form.ForeColor
+
 $settingsInfoTab = New-Object System.Windows.Forms.TabPage
 $settingsInfoTab.Text = 'Settings and Info'
 $settingsInfoTab.BackColor = $form.BackColor
 $settingsInfoTab.ForeColor = $form.ForeColor
 
-$tabControl.TabPages.AddRange(@($generalTab, $devTab, $settingsInfoTab))
+$tabControl.TabPages.AddRange(@($generalTab, $devTab, $tweaksTab, $settingsInfoTab))
+
+function CreateInstallLocationTextBox {
+    $installLocationTextBox = New-Object System.Windows.Forms.TextBox
+    $installLocationTextBox.Top = 30
+    $installLocationTextBox.Left = 10
+    $installLocationTextBox.Width = 560
+    $installLocationTextBox.Height = 20
+    $installLocationTextBox.Text = "C:\Program Files"
+    $installLocationTextBox.ForeColor = [System.Drawing.Color]::Black
+    $installLocationTextBox.BackColor = [System.Drawing.Color]::White
+    return $installLocationTextBox
+}
+
+$generalInstallLocationTextBox = CreateInstallLocationTextBox
+$generalTab.Controls.Add($generalInstallLocationTextBox)
+
+$devInstallLocationTextBox = CreateInstallLocationTextBox
+$devTab.Controls.Add($devInstallLocationTextBox)
 
 function Install-ChocoPackage {
     param([string]$packageName, [string]$installPath)
-    $processInfo = New-Object System.Diagnostics.ProcessStartInfo
-    $processInfo.FileName = "powershell.exe"
-    $processInfo.RedirectStandardError = $true
-    $processInfo.RedirectStandardOutput = $true
-    $processInfo.UseShellExecute = $false
-    $processInfo.Arguments = "choco install $packageName -y --params=`"'/InstallDir:$installPath'`""
-    $process = New-Object System.Diagnostics.Process
-    $process.StartInfo = $processInfo
-    $process.Start() | Out-Null
-    $process.WaitForExit()
-    $output = $process.StandardOutput.ReadToEnd()
-    $error = $process.StandardError.ReadToEnd()
-    if ($process.ExitCode -ne 0) {
-        [System.Windows.Forms.MessageBox]::Show("Error: $error")
-    } else {
-        [System.Windows.Forms.MessageBox]::Show("Installed: $output")
-    }
+    Start-Process -FilePath "powershell.exe" -ArgumentList "choco install $packageName -y --params `"/InstallDir:$installPath`"" -Verb RunAs
 }
 
 function Add-AppControl {
-    param($tab, $appName, $y)
+    param($tab, $appName, $y, $installLocationTextBox)
     $checkBox = New-Object System.Windows.Forms.CheckBox
     $checkBox.Text = $appName
     $checkBox.Top = $y
@@ -66,28 +73,30 @@ function Add-AppControl {
     $installButton = New-Object System.Windows.Forms.Button
     $installButton.Text = "Install"
     $installButton.Top = $y
-    $installButton.Left = 250
-    $installButton.Width = 100
+    $installButton.Left = 520
+    $installButton.Width = 60
     $installButton.Height = 20
+    $installButton.ForeColor = $form.ForeColor
+    $installButton.BackColor = [System.Drawing.Color]::FromArgb(45, 45, 45)
     $installButton.Add_Click({
-        Install-ChocoPackage -packageName $checkBox.Text -installPath "C:\Program Files"
+        Install-ChocoPackage -packageName $checkBox.Text -installPath $installLocationTextBox.Text
     })
 
     $tab.Controls.Add($checkBox)
     $tab.Controls.Add($installButton)
 }
 
-$y = 40
-$generalApps = @("notepadplusplus", "googlechrome", "firefox")
+$y = 60
+$generalApps = @('GoogleChrome', 'MozillaFirefox', 'Vivaldi', 'NotepadPlusPlus', 'JDownloader', 'WinRAR', 'Discord')
 foreach ($app in $generalApps) {
-    Add-AppControl -tab $generalTab -appName $app -y $y
+    Add-AppControl -tab $generalTab -appName $app -y $y -installLocationTextBox $generalInstallLocationTextBox
     $y += 30
 }
 
-$y = 40
-$devApps = @("git", "vscode", "docker")
+$y = 60
+$devApps = @('Git', 'VisualStudioCode', 'Atom', 'SublimeText', 'Postman', 'Docker')
 foreach ($app in $devApps) {
-    Add-AppControl -tab $devTab -appName $app -y $y
+    Add-AppControl -tab $devTab -appName $app -y $y -installLocationTextBox $devInstallLocationTextBox
     $y += 30
 }
 
